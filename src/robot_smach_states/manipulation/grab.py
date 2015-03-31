@@ -54,8 +54,18 @@ class PickUp(State):
 
         rospy.loginfo(goal_bl)
 
-        # Arm to position in a safe way
-        arm.send_joint_trajectory('prepare_grasp')
+        # Carrying pose
+        if arm.side == 'left':
+            y_home = 0.2
+        else:
+            y_home = -0.2
+
+        # immediately go to the retract pos
+        rospy.loginfo('y_home = ' + str(y_home))
+        rospy.loginfo('start moving to a good pregrasp position')
+        if not arm.send_goal(0.18, y_home, goal_bl.z + 0.1, 0, 0, 0,
+                             timeout=60):
+            rospy.logerr('Failed pregrasp pose')
 
         # Open gripper
         arm.send_gripper_goal('open')
@@ -102,12 +112,6 @@ class PickUp(State):
                              timeout=20, allowed_touch_objects=[grab_entity.id]
                              ):
             rospy.logerr('Failed retract')
-
-        # Carrying pose
-        if arm.side == 'left':
-            y_home = 0.2
-        else:
-            y_home = -0.2
 
         rospy.loginfo('y_home = ' + str(y_home))
 
