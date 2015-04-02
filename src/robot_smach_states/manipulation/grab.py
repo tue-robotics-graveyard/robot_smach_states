@@ -37,14 +37,24 @@ class PickUp(State):
         rospy.loginfo('PickUp!')
 
         # goal in map frame
-        goal_map = msgs.Point(0, 0, 0)
+        #goal_map = msgs.Point(0, 0, 0)
+        goal_map = grab_entity.center_point
+        goal_map.z = (grab_entity.z_min + grab_entity.z_max)/2
+        
+        ''' Look at object '''
+        robot.head.look_at_point(msgs.PointStamped(goal_map.x, goal_map.y, goal_map.z, frame_id="/map"))
 
         try:
             # Transform to base link frame
+            #goal_bl = transformations.tf_transform(
+            #    goal_map, grab_entity.id, robot.robot_name+'/base_link',
+            #    tf_listener=robot.tf_listener
+            #)
             goal_bl = transformations.tf_transform(
-                goal_map, grab_entity.id, robot.robot_name+'/base_link',
+                goal_map, '/map', robot.robot_name+'/base_link',
                 tf_listener=robot.tf_listener
             )
+            
             if goal_bl is None:
                 rospy.logerr('Transformation of goal to base failed')
                 return 'failed'
