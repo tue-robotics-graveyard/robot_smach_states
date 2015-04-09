@@ -56,9 +56,9 @@ class PickUp(State):
 
         # Carrying pose
         if arm.side == 'left':
-            y_home = 0.2
+            y_home = 0.3
         else:
-            y_home = -0.2
+            y_home = -0.3
 
         # immediately go to the retract pos
         rospy.loginfo('y_home = ' + str(y_home))
