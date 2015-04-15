@@ -12,6 +12,7 @@ from robot_smach_states.state import State
 from robot_smach_states.util.designators import check_type
 
 from robot_smach_states.navigation import NavigateToGrasp
+from robot_smach_states.perception import LookAtEntity, CancelLookAt
 
 
 class PickUp(State):
@@ -129,11 +130,20 @@ class Grab(smach.StateMachine):
         check_type(arm, Arm)
 
         with self:
+            smach.StateMachine.add('LOOK_AT_ENTITY', LookAtEntity(robot, item),
+                                   transitions={'succeeded': 'NAVIGATE_TO_GRAB'})
+
             smach.StateMachine.add('NAVIGATE_TO_GRAB', NavigateToGrasp(robot, item, arm),
                                    transitions={'unreachable':      'failed',
                                                 'goal_not_defined': 'failed',
                                                 'arrived':          'GRAB'})
 
             smach.StateMachine.add('GRAB', PickUp(robot, arm, item),
-                                   transitions={'succeeded': 'done',
-                                                'failed':    'failed'})
+                                   transitions={'succeeded': 'CANCEL_LOOKAT_DONE',
+                                                'failed':    'CANCEL_LOOKAT_FAILED'})
+
+            smach.StateMachine.add('CANCEL_LOOKAT_DONE',   CancelLookAt(robot),
+                                   transitions={'succeeded': 'done'})
+
+            smach.StateMachine.add('CANCEL_LOOKAT_FAILED', CancelLookAt(robot),
+                                   transitions={'succeeded': 'failed'})
