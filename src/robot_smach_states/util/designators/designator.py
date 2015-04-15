@@ -316,6 +316,11 @@ class ListElementDesignator(Designator):
 class EdEntityCollectionDesignator(Designator):
     """
     Resolves to a collection of Ed entities
+
+    >>> from robot_skills.mockbot import Mockbot
+    >>> robot = Mockbot()
+    >>> entities = EdEntityCollectionDesignator(robot)
+    >>> check_resolve_type(entities, [EntityInfo]) #This is more a test for check_resolve_type to be honest :-/
     """
 
     def __init__(self, robot, type="", center_point=None, radius=0, id="", parse=True, criteriafuncs=None,
@@ -482,8 +487,10 @@ class EdEntityDesignator(Designator):
         return None
 
     def __repr__(self):
+        criteria_code = [inspect.getsource(criterium).strip() for criterium in self.criteriafuncs]
+    
         return "EdEntityDesignator(robot, type={0}, center_point={1}, radius={2}, id={3}, parse={4}, criteriafuncs={5})".format(
-            self.type, str(self.center_point).replace("\n", " "), self.radius, self.id, self.parse, self.criteriafuncs)
+            self.type, str(self.center_point).replace("\n", " "), self.radius, self.id, self.parse, criteria_code)
 
 
 class AttrDesignator(Designator):
@@ -543,10 +550,10 @@ class FuncDesignator(Designator):
 
 class ArmDesignator(Designator):
     """Resolves to an instance of the Arm-class in robot_skills.
-    >>> left, right = "left", "right" #Just strings in this test, but must be robot_skills.Arm-instances
-    >>> a = ArmDesignator({"left":left, "right":right}, left)
-    >>> a.resolve()
-    'left'
+    >>> from robot_skills.mockbot import Mockbot
+    >>> robot = Mockbot()
+    >>> a = ArmDesignator(robot.arms, robot.arms['left'])
+    >>> assert a.resolve() == robot.arms['left']
     """
 
     def __init__(self, all_arms, preferred_arm=None):
@@ -571,7 +578,7 @@ class ArmDesignator(Designator):
             # import ipdb; ipdb.set_trace()
             available_arms = filter(self.available, self.all_arms.values())
             rospy.loginfo("Found %d available arms" % len(available_arms))
-            available_arms = filter(lambda arm: arm.operational, self.all_arms.values())
+            available_arms = filter(lambda arm: arm.operational, available_arms)
             rospy.loginfo("For those arms, there are %d arms operational" % len(available_arms))
             if any(available_arms):
                 return available_arms[0]
@@ -587,23 +594,24 @@ class ArmDesignator(Designator):
 class UnoccupiedArmDesignator(ArmDesignator):
     """An UnoccupiedArmDesignator resolves to an arm that is not occupied by an entity.
     .resolve() returns None when no such arm can be found
-    >>> from mock import MagicMock
-    >>> leftArm = MagicMock()
-    >>> leftArm.occupied_by = None
-    >>> rightArm = MagicMock()
-    >>> rightArm.occupied_by = None
-    >>> arms = {"left":leftArm, "right":rightArm}
-    >>> empty_arm_designator = UnoccupiedArmDesignator(arms, rightArm)
+    >>> from robot_skills.mockbot import Mockbot
+    >>> robot = Mockbot()
+    >>> a = ArmDesignator(robot.arms, robot.arms['left'])
+    >>> assert a.resolve() == robot.arms['left']
+
+    >>> robot.arms['left'].occupied_by = None
+    >>> robot.arms['right'].occupied_by = None
+    >>> empty_arm_designator = UnoccupiedArmDesignator(robot.arms, robot.arms['right'])
     >>> arm_to_use_for_first_grab = empty_arm_designator.resolve()
-    >>> assert(arm_to_use_for_first_grab == rightArm)
+    >>> assert(arm_to_use_for_first_grab == robot.arms['right'])
     >>>
-    >>> #Grab the 1st item with the rightArm
-    >>> rightArm.occupied_by = "entity1"
+    >>> #Grab the 1st item with the robot.arms['right']
+    >>> robot.arms['right'].occupied_by = "entity1"
     >>> arm_to_use_for_second_grab = empty_arm_designator.resolve()
-    >>> assert(arm_to_use_for_second_grab == leftArm)
+    >>> assert(arm_to_use_for_second_grab == robot.arms['left'])
     >>>
-    >>> #Grab the 2nd item with the rightArm
-    >>> leftArm.occupied_by = "entity2"
+    >>> #Grab the 2nd item with the robot.arms['right']
+    >>> robot.arms['left'].occupied_by = "entity2"
     >>> #You can't do 3 grabs with a 2 arms robot without placing an entity first, so this will fail to resolve for a 3rd time
     >>> arm_to_use_for_third_grab = empty_arm_designator.resolve()
     >>> assert arm_to_use_for_third_grab == None
@@ -619,14 +627,20 @@ class UnoccupiedArmDesignator(ArmDesignator):
 class ArmHoldingEntityDesignator(ArmDesignator):
     """An UnoccupiedArmDesignator resolves to an arm that is not occupied by an entity.
     .resolve() returns None when no such arm can be found
-    >>> from mock import MagicMock
-    >>> leftArm = MagicMock()
+
+    >>> from robot_skills.mockbot import Mockbot
+    >>> robot = Mockbot()
+    >>> a = ArmDesignator(robot.arms, robot.arms['left'])
+    >>> assert a.resolve() == robot.arms['left']
+
+    >>> leftArm = robot.arms['left']
     >>> leftArm.occupied_by = None
-    >>> rightArm = MagicMock()
+
+    >>> rightArm = robot.arms['right']
     >>> rightArm.occupied_by = "entity3"
-    >>> arms = {"left":leftArm, "right":rightArm}
+
     >>> entity_designator = Designator("entity3")
-    >>> holding_arm_designator = ArmHoldingEntityDesignator(arms, entity_designator)
+    >>> holding_arm_designator = ArmHoldingEntityDesignator(robot.arms, entity_designator)
     >>> arm_to_use_for_placing_entity3 = holding_arm_designator.resolve()
     >>> assert(arm_to_use_for_placing_entity3 == rightArm)
     >>>
