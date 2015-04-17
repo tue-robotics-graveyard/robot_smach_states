@@ -61,7 +61,8 @@ class PickUp(State):
         # immediately go to the retract pos
         rospy.loginfo('y_home = ' + str(y_home))
         rospy.loginfo('start moving to a good pregrasp position')
-        if not arm.send_goal(0.25, y_home, goal_bl.z + 0.1, 0, 0, 0,
+        if not arm.send_goal(0.25,         y_home,       goal_bl.z + 0.1,
+                             float('nan'), float('nan'), float('nan'),
                              timeout=60):
             rospy.logerr('Failed pregrasp pose')
 
@@ -70,7 +71,8 @@ class PickUp(State):
 
         # Pre-grasp
         rospy.loginfo('Starting Pre-grasp')
-        if not arm.send_goal(goal_bl.x, goal_bl.y, goal_bl.z, 0, 0, 0,
+        if not arm.send_goal(goal_bl.x,    goal_bl.y,    goal_bl.z,
+                             0,    0,      float('nan'),
                              frame_id='/'+robot.robot_name+'/base_link',
                              timeout=60, pre_grasp=True, first_joint_pos_only=True
                              ):
@@ -82,7 +84,8 @@ class PickUp(State):
 
         # Grasp
         rospy.loginfo('Starting Grasp')
-        if not arm.send_goal(goal_bl.x, goal_bl.y, goal_bl.z, 0, 0, 0,
+        if not arm.send_goal(goal_bl.x,    goal_bl.y,    goal_bl.z,
+                             0,    0,      float('nan'),
                              frame_id='/'+robot.robot_name+'/base_link',
                              timeout=60, pre_grasp=True,
                              allowed_touch_objects=[grab_entity.id]
@@ -100,7 +103,8 @@ class PickUp(State):
 
         # Lift
         rospy.loginfo('Starting Lift')
-        if not arm.send_goal(goal_bl.x, goal_bl.y, goal_bl.z + 0.1, 0.0, 0.0, 0.0,
+        if not arm.send_goal(goal_bl.x,    goal_bl.y,    goal_bl.z,
+                             0,    0,      float('nan'),
                              frame_id='/'+robot.robot_name+'/base_link',
                              timeout=60, allowed_touch_objects=[grab_entity.id]
                              ):
@@ -108,7 +112,8 @@ class PickUp(State):
 
         # Retract
         rospy.loginfo('Starting Retract')
-        if not arm.send_goal(goal_bl.x - 0.1, goal_bl.y, goal_bl.z + 0.1, 0.0, 0.0, 0.0,
+        if not arm.send_goal(goal_bl.x - 0.1, goal_bl.y,    goal_bl.z + 0.1,
+                             0,    0,      float('nan'),
                              frame_id='/'+robot.robot_name+'/base_link',
                              timeout=60, allowed_touch_objects=[grab_entity.id]
                              ):
@@ -117,7 +122,8 @@ class PickUp(State):
         rospy.loginfo('y_home = ' + str(y_home))
 
         rospy.loginfo('start moving to carrying pose')
-        if not arm.send_goal(0.18, y_home, goal_bl.z + 0.1, 0, 0, 0,
+        if not arm.send_goal(0.25, y_home, float('nan'),
+                             0,    0,      float('nan'),
                              timeout=60
                              ):
             rospy.logerr('Failed carrying pose')
