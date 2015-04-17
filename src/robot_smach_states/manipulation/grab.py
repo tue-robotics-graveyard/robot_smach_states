@@ -62,7 +62,7 @@ class PickUp(State):
         rospy.loginfo('y_home = ' + str(y_home))
         rospy.loginfo('start moving to a good pregrasp position')
         if not arm.send_goal(0.25,         y_home,       goal_bl.z + 0.1,
-                             float('nan'), float('nan'), float('nan'),
+                             0,            0,            float('nan'),
                              timeout=60):
             rospy.logerr('Failed pregrasp pose')
 
