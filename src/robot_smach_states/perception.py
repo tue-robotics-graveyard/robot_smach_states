@@ -31,6 +31,17 @@ class LookAtEntity(State):
         rospy.sleep(rospy.Duration(waittime))
         return "succeeded"
 
+
+class CancelLookAt(State):
+    def __init__(self, robot):
+        State.__init__(self, locals(), outcomes=['succeeded'])
+
+    def run(self, robot):
+        rospy.loginfo('Cancel LookAt goal')
+        robot.head.cancel_goal()
+        return "succeeded"
+
+
 # Testing
 
 def setup_statemachine(robot):
