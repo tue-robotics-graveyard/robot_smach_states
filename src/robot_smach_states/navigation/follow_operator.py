@@ -20,7 +20,8 @@ from robot_skills.util import transformations, msg_constructors
 class FollowOperator(smach.State):
     def __init__(self, robot, ask_follow=True, operator_radius=1, timeout=1.0, start_timeout=10, operator_timeout=20,
                  distance_threshold=None, lost_timeout=5, lost_distance=1.5,
-                 operator_id_des=VariableDesignator(resolve_type=str), standing_still_timeout=20):
+                 operator_id_des=VariableDesignator(resolve_type=str), standing_still_timeout=20,
+                 max_prediction_time=0.0):
         smach.State.__init__(self, outcomes=["stopped",'lost_operator', "no_operator"])
         self._robot = robot
         self._time_started = None
@@ -36,8 +37,11 @@ class FollowOperator(smach.State):
         self._lost_timeout = lost_timeout
         self._lost_distance = lost_distance
         self._standing_still_timeout = standing_still_timeout
+        self._max_prediction_time = max_prediction_time
 
         self._operator_id_des = operator_id_des
+        self._operator_dx = 0.0
+        self._operator_dy = 0.0
 
         self._operator_pub = rospy.Publisher('/%s/follow_operator/operator_position' % robot.robot_name, geometry_msgs.msg.PointStamped, queue_size=10)
         self._plan_marker_pub = rospy.Publisher('/%s/global_planner/visualization/markers/global_plan' % robot.robot_name, Marker, queue_size=10)
@@ -119,9 +123,13 @@ class FollowOperator(smach.State):
         just add it. '''
         if self._operator_id:
             if self._breadcrumbs:
-                dx = self._breadcrumbs[-1].pose.position.x - self._operator.pose.position.x
-                dy = self._breadcrumbs[-1].pose.position.y - self._operator.pose.position.y
-                if math.hypot(dx, dy) < self._breadcrumb_distance :
+                dx = self._operator.pose.position.x - self._breadcrumbs[-1].pose.position.x
+                dy = self._operator.pose.position.y - self._breadcrumbs[-1].pose.position.y
+
+                self._operator_dx = dx
+                self._operator_dy = dy
+
+                if math.hypot(dx, dy) < self._breadcrumb_distance:
                     self._breadcrumbs[-1] = self._operator
                 else:
                     self._breadcrumbs.append(self._operator)
@@ -164,7 +172,7 @@ class FollowOperator(smach.State):
             if self._operator_id:
                 # At the moment when the operator is lost, tell him to slow down and clear operator ID
                 self._operator_id = None
-                #self._lost_time = rospy.Time.now()
+                self._lost_time = rospy.Time.now()
                 self._robot.speech.speak("Not so fast!", block=False)
             return False
 
@@ -276,13 +284,33 @@ class FollowOperator(smach.State):
 
         return False
 
-    def _recover_operator(self):
-        while rospy.Time.now() - self._lost_time < rospy.Duration(self._lost_timeout):
-            # Try to catch up with a close entity
-            recovered_operator = self._robot.ed.get_closest_entity(radius=self._lost_distance, center_point=self._last_operator.pose.position)
-            if recovered_operator:
-                break
-            rospy.sleep(0.2)
+    def _recover_operator(self, prediction_time=None):
+        if not prediction_time:
+            prediction_time = self._max_prediction_time
+
+        prediction_dx = self._operator_dx * prediction_time
+        prediction_dy = self._operator_dy * prediction_time
+        predicted_operator_position = geometry_msgs.msg.PointStamped()
+        predicted_operator_position.header.stamp = rospy.Time.now()
+        predicted_operator_position.header.frame_id = "/map"
+        predicted_operator_position.point.x = self._last_operator.pose.position.x + prediction_dx
+        predicted_operator_position.point.y = self._last_operator.pose.position.y + prediction_dy
+        predicted_operator_position.point.z = 1.2
+
+        self._operator_pub.publish(predicted_operator_position)
+
+        if self._breadcrumbs:
+            recovered_operator = self._robot.ed.get_closest_entity(radius=self._lost_distance,
+                                                                   center_point=predicted_operator_position)
+
+        else:
+            while rospy.Time.now() - self._lost_time < rospy.Duration(self._lost_timeout):
+                # Try to catch up with a close entity
+                recovered_operator = self._robot.ed.get_closest_entity(radius=self._lost_distance,
+                                                                       center_point=predicted_operator_position)
+                if recovered_operator:
+                    break
+                rospy.sleep(0.2)
 
         if recovered_operator:
             self._operator_id = recovered_operator.id
@@ -314,8 +342,12 @@ class FollowOperator(smach.State):
             self._update_breadcrumb_path()
 
             if self._breadcrumbs:
+                if not self._operator:
+                    self._recover_operator(prediction_time=(rospy.Time.now()-self._lost_time).to_sec())
+
                 # If there are still breadcrumbs on the path, keep following the path
                 if self._update_navigation():
+                    # The robot arrived near the operator!
                     self._robot.base.local_planner.cancelCurrentPlan()
                     self._visualize_breadcrumbs()
                     self._operator_id_des.writeable.write(self._operator_id)
