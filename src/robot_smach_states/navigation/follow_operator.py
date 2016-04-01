@@ -135,7 +135,8 @@ class FollowOperator(smach.State):
         for crumb in self._breadcrumbs:
             dx = crumb.pose.position.x - robot_position.x
             dy = crumb.pose.position.y - robot_position.y
-            if math.hypot(dx, dy) > self._operator_radius:
+            # if math.hypot(dx, dy) > self._operator_radius:
+            if math.hypot(dx, dy) > 0.8:
                 temp_crumbs.append(crumb)
 
         self._breadcrumbs = temp_crumbs
@@ -144,7 +145,7 @@ class FollowOperator(smach.State):
 
     def _track_operator(self):
         if self._operator_id:
-            self._operator = self._robot.ed.get_entity( id=self._operator_id )
+            self._operator = self._robot.ed.get_entity(id=self._operator_id)
         else:
             self._operator = None
 
