@@ -357,9 +357,11 @@ class EmptySpotDesignator(Designator):
         areas_for_place_location = place_location.data['areas']
         in_front_of_areas = [area for area in areas_for_place_location if area['name'] == 'in_front_of']
         in_front_of_area = in_front_of_areas[0] if in_front_of_areas else None
-        x = in_front_of_area['shape'][0]['box']['max']['x'] - area['shape'][0]['box']['min']['x']
-        y = in_front_of_area['shape'][0]['box']['max']['y'] - area['shape'][0]['box']['min']['y']
+        import ipdb; ipdb.set_trace()
         def distance_between_poi_and_in_front_of_area(poi):
+            # TODO: Convert to /map-frame
+            x = (in_front_of_area['shape'][0]['box']['max']['x'] - area['shape'][0]['box']['min']['x']) / 2
+            y = (in_front_of_area['shape'][0]['box']['max']['y'] - area['shape'][0]['box']['min']['y']) / 2
             return math.hypot(x-poi.point.x, y-poi.point.y)
 
         # List with tuples containing both the POI and the distance the
