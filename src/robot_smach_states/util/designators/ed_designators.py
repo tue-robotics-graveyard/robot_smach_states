@@ -300,6 +300,7 @@ class EmptySpotDesignator(Designator):
     PLACE_SHELF = "shelf2"
     cabinet = ds.EntityByIdDesignator(robot, id=CABINET, name="pick_shelf")
     place_position = ds.LockingDesignator(ds.EmptySpotDesignator(robot, cabinet, name="placement", area=PLACE_SHELF), name="place_position")
+    place_position.resolve()
     """
     def __init__(self, robot, place_location_designator, name=None, area=None):
         """
@@ -353,9 +354,20 @@ class EmptySpotDesignator(Designator):
                 distance = None
             return distance
 
+        areas_for_place_location = place_location.data['areas']
+        in_front_of_areas = [area for area in areas_for_place_location if area['name'] == 'in_front_of']
+        in_front_of_area = in_front_of_areas[0] if in_front_of_areas else None
+        x = in_front_of_area['shape'][0]['box']['max']['x'] - area['shape'][0]['box']['min']['x']
+        y = in_front_of_area['shape'][0]['box']['max']['y'] - area['shape'][0]['box']['min']['y']
+        def distance_between_poi_and_in_front_of_area(poi):
+            return math.hypot(x-poi.point.x, y-poi.point.y)
+
         # List with tuples containing both the POI and the distance the
         # robot needs to travel in order to place there
-        open_POIs_dist = [(poi, distance_to_poi_area(poi)) for poi in open_POIs]
+        if in_front_of_area:
+            open_POIs_dist = [(poi, distance_between_poi_and_in_front_of_area(poi)) for poi in open_POIs]
+        else:
+            open_POIs_dist = [(poi, distance_to_poi_area(poi)) for poi in open_POIs]
 
         # Feasible POIS: discard
         feasible_POIs = []
