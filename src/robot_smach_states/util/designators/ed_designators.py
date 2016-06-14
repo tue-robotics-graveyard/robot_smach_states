@@ -319,6 +319,7 @@ class EmptySpotDesignator(Designator):
         self._area = area
 
         self.marker_pub = rospy.Publisher('/empty_spots', MarkerArray, queue_size=1)
+        self.area_center_pub = rospy.Publisher('/area_center', Marker, queue_size=1)
         self.marker_array = MarkerArray()
 
     def _resolve(self):
@@ -354,20 +355,35 @@ class EmptySpotDesignator(Designator):
                 distance = None
             return distance
 
-        areas_for_place_location = place_location.data['areas']
-        in_front_of_areas = [area for area in areas_for_place_location if area['name'] == 'in_front_of']
-        in_front_of_area = in_front_of_areas[0] if in_front_of_areas else None
-        import ipdb; ipdb.set_trace()
-        def distance_between_poi_and_in_front_of_area(poi):
-            # TODO: Convert to /map-frame
-            x = (in_front_of_area['shape'][0]['box']['max']['x'] - area['shape'][0]['box']['min']['x']) / 2
-            y = (in_front_of_area['shape'][0]['box']['max']['y'] - area['shape'][0]['box']['min']['y']) / 2
-            return math.hypot(x-poi.point.x, y-poi.point.y)
+
+        def distance_between_poi_and_in_front_of_area(reference_ps, poi):
+            """Must be defined in the same frame of course."""
+            return math.hypot(reference_ps.pose.position.x-poi.point.x,
+                              reference_ps.pose.position.y-poi.point.y)
 
         # List with tuples containing both the POI and the distance the
         # robot needs to travel in order to place there
+        areas_for_place_location = place_location.data['areas']
+        in_front_of_areas = [area for area in areas_for_place_location if area['name'] == 'in_front_of']
+        in_front_of_area = in_front_of_areas[0] if in_front_of_areas else None
         if in_front_of_area:
-            open_POIs_dist = [(poi, distance_between_poi_and_in_front_of_area(poi)) for poi in open_POIs]
+            # Determine the (x,y)-center of the 'in_front_of'-area
+            x = (in_front_of_area['shape'][0]['box']['max']['x'] + in_front_of_area['shape'][0]['box']['min']['x']) / 2
+            y = (in_front_of_area['shape'][0]['box']['max']['y'] + in_front_of_area['shape'][0]['box']['min']['y']) / 2
+
+            # Convert the point from its position with respect to the object to a PointStamped wrt /map
+            ps_wrt_place_location = msg_constructors.PoseStamped(x, y, 0, frame_id=place_location.id)
+            in_front_of = self.robot.tf_transform_pose(ps_wrt_place_location, "/map")
+
+            center = self.create_selection_marker(ps_wrt_place_location)
+            center.id = 100
+            center.ns = "area"
+            center.color.r = 0.0
+            center.color.b = 1.0
+            center.lifetime = rospy.Duration(60.0)
+            self.area_center_pub.publish(center)
+
+            open_POIs_dist = [(poi, distance_between_poi_and_in_front_of_area(in_front_of, poi)) for poi in open_POIs]
         else:
             open_POIs_dist = [(poi, distance_to_poi_area(poi)) for poi in open_POIs]
 
@@ -394,7 +410,9 @@ class EmptySpotDesignator(Designator):
     def create_marker(self, x, y, z):
         marker = Marker()
         marker.id = len(self.marker_array.markers)
+        marker.ns = "poi"
         marker.type = 2
+        marker.action = marker.ADD
         marker.header.frame_id = "/map"
         marker.header.stamp = rospy.Time.now()
         marker.pose.position.x = x
@@ -413,7 +431,9 @@ class EmptySpotDesignator(Designator):
     def create_selection_marker(self, selected_pose):
         marker = Marker()
         marker.id = len(self.marker_array.markers) + 1
+        marker.ns = "selection"
         marker.type = 2
+        marker.action = marker.ADD
         marker.header.frame_id = selected_pose.header.frame_id
         marker.header.stamp = rospy.Time.now()
         marker.pose.position.x = selected_pose.pose.position.x
