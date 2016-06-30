@@ -14,6 +14,7 @@ from smach_ros import SimpleActionState
 from ed_perception.msg import FaceLearningGoal, FaceLearningResult #
 from dragonfly_speech_recognition.srv import GetSpeechResponse
 import time
+import math
 
 # Say: Immediate say
 # Hear: Immediate hear
@@ -105,7 +106,7 @@ class Hear(smach.State):
 
 class HearOptions(smach.State):
     def __init__(self, robot, options, timeout = rospy.Duration(10), look_at_standing_person=True):
-        outcomes = options
+        outcomes = list(options) # make a copy
         outcomes.append("no_result")
         smach.State.__init__(self, outcomes=outcomes)
         self._options = options
@@ -123,9 +124,8 @@ class HearOptions(smach.State):
             self._robot.head.cancel_goal()
 
         if answer:
-            if answer.result:
-                if "option" in answer.choices:
-                    return answer.choices["option"]
+            if "option" in answer.choices:
+                return answer.choices["option"]
         else:
             self._robot.speech.speak("Something is wrong with my ears, please take a look!")
 
@@ -285,9 +285,9 @@ class AskContinue(smach.StateMachine):
                                     transitions={'spoken':'HEAR'})
 
             smach.StateMachine.add('HEAR',
-                                    Hear(self.robot, 'continue', self.timeout),
-                                    transitions={   'heard':'continue',
-                                                    'not_heard':'no_response'})
+                                    HearOptions(self.robot, ['continue'], self.timeout),
+                                    transitions={   'continue':'continue',
+                                                    'no_result':'no_response'})
 
 ##########################################################################################################################################
 
@@ -486,12 +486,15 @@ def learn_person_procedure(robot, person_name="", n_samples=5, timeout=5.0):
     start_time = time.time()
     while count < n_samples:
         if robot.ed.learn_person(person_name):
+            if count == 0:
+                robot.speech.speak("Hi there!")
+
             # reset timer
             start_time = time.time()
 
             count += 1
 
-            if count == n_samples/2:
+            if count == math.ceil(n_samples/2):
                 robot.speech.speak("Almost done, keep looking.", block=False)
         else:
             print ("[LearnPersonProcedure] " + "No person found.")
