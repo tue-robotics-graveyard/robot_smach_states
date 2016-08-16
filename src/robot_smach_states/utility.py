@@ -87,7 +87,6 @@ class SetInitialPose(smach.State):
         self.robot.base.set_initial_pose(x, y, phi)
 
         # Reset costmap: costmap is obviously entirely off if the localization was wrong before giving the initial pose
-        # self.robot.base.reset_costmap()
         # Wait 0.5 s just to be sure
         rospy.sleep(rospy.Duration(0.5))
 
