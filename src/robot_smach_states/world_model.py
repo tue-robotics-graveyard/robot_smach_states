@@ -12,31 +12,31 @@ from robot_skills.classification_result import ClassificationResult
 
 import time
 
-# ----------------------------------------------------------------------------------------------------
+# # ----------------------------------------------------------------------------------------------------
+#
+#
+# class SetPlugins(smach.State):
+#     def __init__(self, robot, enable=None, disable=None):
+#         smach.State.__init__(self, outcomes=["done"])
+#         self.enable = enable
+#         self.disable = disable
+#         self.robot = robot
+#
+#     def execute(self, userdata=None):
+#         if self.disable:
+#             self.robot.ed.disable_plugins(self.disable)
+#
+#         if self.enable:
+#             self.robot.ed.enable_plugins(self.enable)
+#
+#         return 'done'
 
-class SetPlugins(smach.State):
-    def __init__(self, robot, enable=None, disable=None):
-        smach.State.__init__(self, outcomes=["done"])
-        self.enable = enable
-        self.disable = disable
-        self.robot = robot
 
-    def execute(self, userdata=None):
-        if self.disable:  
-            self.robot.ed.disable_plugins(self.disable)
-
-        if self.enable:
-            self.robot.ed.enable_plugins(self.enable)
-
-        return 'done'
-
-
-
-'''
-    Initialize world model with a certain configuration.
-    Set perception mode to non-continuos and disable laser_integration.
-'''
 class InitializeWorldModel(smach.State):
+    """
+        Initialize world model with a certain configuration.
+        Set perception mode to non-continuos and disable laser_integration.
+    """
     def __init__(self, robot):
         smach.State.__init__(self, outcomes=["done"])
         self.robot = robot
@@ -52,12 +52,12 @@ class InitializeWorldModel(smach.State):
         return 'done'
 
 
-'''
-    Look at an entiy and segment objects whithin the area desired
-     - entity: entity that holds the objects, for example on top
-     - searchArea: where are the objects wrt the entity, default = on_top_of
-'''
 class SegmentObjects(smach.State):
+    """
+        Look at an entiy and segment objects whithin the area desired
+         - entity: entity that holds the objects, for example on top
+         - searchArea: where are the objects wrt the entity, default = on_top_of
+    """
     def __init__(self, robot, objectIDsDes, entityDes, searchArea="on_top_of"):
         smach.State.__init__(self, outcomes=["done"])
         self.robot = robot
@@ -123,11 +123,11 @@ class SegmentObjects(smach.State):
 
         # Classify and update IDs
         objClassif = self.robot.ed.classify(ids=objIDs)
-        
+
         # import ipdb; ipdb.set_trace()
-        
-        for idx, obj in enumerate(objClassif): 
-            print "Object {} is a '{}' (ID: {})".format(idx, obj.type, obj.id)        
+
+        for idx, obj in enumerate(objClassif):
+            print "Object {} is a '{}' (ID: {})".format(idx, obj.type, obj.id)
 
         self.objectIDsDes.write(objClassif)
 
@@ -136,20 +136,21 @@ class SegmentObjects(smach.State):
 
         return 'done'
 
-# ----------------------------------------------------------------------------------------------------
-
-class Inspect(smach.StateMachine):
-    def __init__(self, robot, entityDes, objectIDsDes=None, searchArea="on_top_of"):
-        smach.StateMachine.__init__(self, outcomes=['done', 'failed'])
-
-        if not objectIDsDes:
-            objectIDsDes = ds.VariableDesignator([], resolve_type=[ClassificationResult])
-
-        with self:
-            smach.StateMachine.add('NAVIGATE_TO_INSPECT', NavigateToObserve(robot, entityDes, radius=1.0),
-                                   transitions={'unreachable':      'failed',
-                                                'goal_not_defined': 'failed',
-                                                'arrived':          'SEGMENT'})
-
-            smach.StateMachine.add('SEGMENT', SegmentObjects(robot, objectIDsDes.writeable, entityDes, searchArea),
-                                   transitions={'done':      'done'})
+# # ----------------------------------------------------------------------------------------------------
+#
+#
+# class Inspect(smach.StateMachine):
+#     def __init__(self, robot, entityDes, objectIDsDes=None, searchArea="on_top_of"):
+#         smach.StateMachine.__init__(self, outcomes=['done', 'failed'])
+#
+#         if not objectIDsDes:
+#             objectIDsDes = ds.VariableDesignator([], resolve_type=[ClassificationResult])
+#
+#         with self:
+#             smach.StateMachine.add('NAVIGATE_TO_INSPECT', NavigateToObserve(robot, entityDes, radius=1.0),
+#                                    transitions={'unreachable':      'failed',
+#                                                 'goal_not_defined': 'failed',
+#                                                 'arrived':          'SEGMENT'})
+#
+#             smach.StateMachine.add('SEGMENT', SegmentObjects(robot, objectIDsDes.writeable, entityDes, searchArea),
+#                                    transitions={'done':      'done'})

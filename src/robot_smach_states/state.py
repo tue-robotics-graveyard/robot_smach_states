@@ -3,11 +3,13 @@ import smach
 import rospy
 from robot_smach_states.util.designators import Designator
 
+
 class State(smach.State):
     def __init__(self, *args, **kwargs):
         smach.State.__init__(self, outcomes=kwargs['outcomes'])
         self.__dict__['init_arguments'] = args
-        print "Using State in {} is deprecated, use smach.State instead and implement execute(self, userdata) instead of run(self, ...)".format(type(self))
+        rospy.logwarn("Using State in {} is deprecated, use smach.State instead and implement execute(self, userdata) " \
+              "instead of run(self, ...)".format(type(self)))
 
     def execute(self, userdata=None):
         resolved_arguments = {key:(value.resolve() if hasattr(value, "resolve") else value) for key,value
@@ -15,7 +17,8 @@ class State(smach.State):
         del resolved_arguments['self']
 
         if not all(resolved_arguments):
-            unresolved_arguments = filter(lambda x: not x, resolved_arguments) #Make a list of all keys that resolve to None (because not None == True)
+            unresolved_arguments = filter(lambda x: not x, resolved_arguments) #Make a list of all keys that resolve to
+            # None (because not None == True)
             rospy.logerr("Values for {0} could not be resolved".format(unresolved_arguments))
 
         return self.run( **resolved_arguments )
@@ -24,13 +27,15 @@ class State(smach.State):
 class TestState(State):
     """
     >>> teststate = TestState("Yes", "this", "works")
-    Using State in <class 'robot_smach_states.state.TestState'> is deprecated, use smach.State instead and implement execute(self, userdata) instead of run(self, ...)
+    Using State in <class 'robot_smach_states.state.TestState'> is deprecated, use smach.State instead and implement
+    execute(self, userdata) instead of run(self, ...)
     >>> teststate.execute()
     Yes this works
     'yes'
 
     >>> teststate2 = TestState(Designator("Also"), "works", Designator("with designators"))
-    Using State in <class 'robot_smach_states.state.TestState'> is deprecated, use smach.State instead and implement execute(self, userdata) instead of run(self, ...)
+    Using State in <class 'robot_smach_states.state.TestState'> is deprecated, use smach.State instead and implement
+    execute(self, userdata) instead of run(self, ...)
     >>> teststate2.execute()
     Also works with designators
     'yes'"""
@@ -41,18 +46,19 @@ class TestState(State):
         print robot, sentence, blaat
         return "yes"
 
+
 class Test(smach.StateMachine):
     def __init__(self):
-        smach.StateMachine.__init__(self, outcomes=['succeeded','failed'])
+        smach.StateMachine.__init__(self, outcomes=['succeeded', 'failed'])
 
         with self:
-            smach.StateMachine.add( 'TEST_STATE1',
-                                    TestState("Yes", "this", "works"),
-                                    transitions={'yes':'TEST_STATE2', 'no':'failed'})
+            smach.StateMachine.add('TEST_STATE1',
+                                   TestState("Yes", "this", "works"),
+                                   transitions={'yes': 'TEST_STATE2', 'no': 'failed'})
 
-            smach.StateMachine.add( 'TEST_STATE2',
-                                    TestState(Designator("Also"), "works", Designator("with designators")),
-                                    transitions={'yes':'succeeded', 'no':'failed'})
+            smach.StateMachine.add('TEST_STATE2',
+                                   TestState(Designator("Also"), "works", Designator("with designators")),
+                                   transitions={'yes': 'succeeded', 'no': 'failed'})
 
 if __name__ == "__main__":
     import doctest

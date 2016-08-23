@@ -24,10 +24,10 @@ class LookAtEntity(State):
         if not entity:
             return 'failed'
 
-        #Entities define their own frame, so there is no need to transform the pose to /map.
-        #That would be equivalent to defining coordinates 0,0,0 in its own frame, so that is what we do here.
-        #The added benefit is that the entity's frame actually moves because the entity is tracked.
-        #This makes the head track the entity
+        # Entities define their own frame, so there is no need to transform the pose to /map.
+        # That would be equivalent to defining coordinates 0,0,0 in its own frame, so that is what we do here.
+        # The added benefit is that the entity's frame actually moves because the entity is tracked.
+        # This makes the head track the entity
         center_point = Point()
         frame_id = "/"+entity.id
 
@@ -37,6 +37,7 @@ class LookAtEntity(State):
         robot.head.look_at_point(point_stamped)
         rospy.sleep(rospy.Duration(waittime))
         return "succeeded"
+
 
 class LookAtArea(State):
     """ Class to look at the center point of a specific area of an entity
@@ -58,10 +59,10 @@ class LookAtArea(State):
         if not entity:
             return 'failed'
 
-        #Entities define their own frame, so there is no need to transform the pose to /map.
-        #That would be equivalent to defining coordinates 0,0,0 in its own frame, so that is what we do here.
-        #The added benefit is that the entity's frame actually moves because the entity is tracked.
-        #This makes the head track the entity
+        # Entities define their own frame, so there is no need to transform the pose to /map.
+        # That would be equivalent to defining coordinates 0,0,0 in its own frame, so that is what we do here.
+        # The added benefit is that the entity's frame actually moves because the entity is tracked.
+        # This makes the head track the entity
         center_point = Point()
         frame_id = "/"+entity.id
 
@@ -74,7 +75,8 @@ class LookAtArea(State):
                     continue
                 ''' Check if length of shape equals one '''
                 if not len(testarea['shape']) == 1:
-                    rospy.logwarn("Shape of area {0} contains multiple entries, don't know what to do".format(area['name']))
+                    rospy.logwarn("Shape of area {0} contains multiple entries,"
+                                  " don't know what to do".format(area['name']))
                     continue
                 ''' Check if the first entry is a box '''
                 if 'box' not in testarea['shape'][0]:
@@ -108,36 +110,37 @@ class LookAtArea(State):
         rospy.logwarn("Cannot find {0} in {1}".format(area, entity.id))
         return "failed"
 
-class LookOnTopOfEntity(State):
-    def __init__(self, robot, entity, keep_following=False, waittime=0.0):
-        ds.check_type(entity, EntityInfo)
 
-        State.__init__(self, locals(), outcomes=['succeeded', 'failed'])
+# class LookOnTopOfEntity(State):
+#     def __init__(self, robot, entity, keep_following=False, waittime=0.0):
+#         ds.check_type(entity, EntityInfo)
+#
+#         State.__init__(self, locals(), outcomes=['succeeded', 'failed'])
+#
+#     def run(self, robot, entity, keep_following, waittime):
+#         if keep_following:
+#             rospy.logerr("Look at stuff: keep_following is obsolete")
+#
+#         if not entity:
+#             return 'failed'
+#
+#         #Entities define their own frame, so there is no need to transform the pose to /map.
+#         #That would be equivalent to defining coordinates 0,0,0 in its own frame, so that is what we do here.
+#         #The added benefit is that the entity's frame actually moves because the entity is tracked.
+#         #This makes the head track the entity
+#         center_point = Point()
+#         frame_id = "/"+entity.id
+#
+#         center_point.z = entity.z_max
+#
+#         rospy.loginfo('Look at %s in frame %s' % (repr(center_point).replace('\n', ' '), frame_id))
+#         point_stamped = PointStamped(point=center_point,
+#                                      header=Header(frame_id=frame_id))
+#         robot.head.look_at_point(point_stamped)
+#         rospy.sleep(rospy.Duration(waittime))
+#         return "succeeded"
 
-    def run(self, robot, entity, keep_following, waittime):
-        if keep_following:
-            rospy.logerr("Look at stuff: keep_following is obsolete")
-
-        if not entity:
-            return 'failed'
-
-        #Entities define their own frame, so there is no need to transform the pose to /map.
-        #That would be equivalent to defining coordinates 0,0,0 in its own frame, so that is what we do here.
-        #The added benefit is that the entity's frame actually moves because the entity is tracked.
-        #This makes the head track the entity
-        center_point = Point()
-        frame_id = "/"+entity.id
-
-        center_point.z = entity.z_max
-
-        rospy.loginfo('Look at %s in frame %s' % (repr(center_point).replace('\n', ' '), frame_id))
-        point_stamped = PointStamped(point=center_point,
-                                     header=Header(frame_id=frame_id))
-        robot.head.look_at_point(point_stamped)
-        rospy.sleep(rospy.Duration(waittime))
-        return "succeeded"
-
-# Testing
+######################################################################################################################
 
 def setup_statemachine(robot):
     entity = ds.EntityByIdDesignator(robot, id='hallway_couch')

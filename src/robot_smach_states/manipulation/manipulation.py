@@ -222,7 +222,7 @@ class GrabWithVisualServoing(smach.State):
         target_position_delta = geometry_msgs.msg.Point()
 
         # First check to see if visual servoing is possible
-        self.robot.perception.toggle(['ar_pose'])
+        # self.robot.perception.toggle(['ar_pose'])
 
         # Transform point(0,0,0) in ar marker frame to grippoint frame
         ar_point = msgs.PointStamped(0, 0, 0, frame_id = ar_frame_id, stamp = rospy.Time())
@@ -272,7 +272,7 @@ class GrabWithVisualServoing(smach.State):
         rospy.logwarn("ar_marker_available (3) = {0}".format(ar_marker_available))
 
         # Switch off ar marker detection
-        self.robot.perception.toggle([])
+        # self.robot.perception.toggle([])
 
         # Original, pregrasp is performed by the compute_pre_grasp node
         if not ar_marker_available:
@@ -299,11 +299,11 @@ class GrabWithVisualServoing(smach.State):
 
 class HandoverFromHuman(smach.StateMachine):
     '''
-    State that enables low level grab reflex. Besides a robot object, needs 
-    an arm and an entity to grab, which is either one from ed through the 
-    grabbed_entity_designator or it is made up in the 
+    State that enables low level grab reflex. Besides a robot object, needs
+    an arm and an entity to grab, which is either one from ed through the
+    grabbed_entity_designator or it is made up in the
     CloseGripperOnHandoverToRobot state and given the grabbed_entity_label
-    as id. 
+    as id.
     '''
     def __init__(self, robot, arm_designator, grabbed_entity_label="", grabbed_entity_designator=None, timeout=10):
         smach.StateMachine.__init__(self, outcomes=['succeeded','failed'])
@@ -323,9 +323,9 @@ class HandoverFromHuman(smach.StateMachine):
             smach.StateMachine.add("SAY1", Say(robot,'Please hand over the object by pushing it gently in my gripper'),
                             transitions={'spoken':'CLOSE_AFTER_INSERT'})
 
-            smach.StateMachine.add( 'CLOSE_AFTER_INSERT', CloseGripperOnHandoverToRobot(robot, 
-                                                                                        arm_designator, 
-                                                                                        grabbed_entity_label=grabbed_entity_label, 
+            smach.StateMachine.add( 'CLOSE_AFTER_INSERT', CloseGripperOnHandoverToRobot(robot,
+                                                                                        arm_designator,
+                                                                                        grabbed_entity_label=grabbed_entity_label,
                                                                                         grabbed_entity_designator=grabbed_entity_designator,
                                                                                         timeout=timeout),
                                 transitions={'succeeded'    :   'succeeded',
@@ -353,7 +353,7 @@ class HandoverToHuman(smach.StateMachine):
                         ArmToJointConfig(robot, locked_arm, 'handover_to_human'),
                         transitions={ 'succeeded'   :'SAY_OPEN_GRIPPER',
                                       'failed'      :'SAY_OPEN_GRIPPER'})
-            
+
             smach.StateMachine.add("SAY_OPEN_GRIPPER",
                         Say(robot, [ "Watch out, I will open my gripper in one second. Please take it from me."]),
                         transitions={   'spoken'    :'OPEN_GRIPPER_HANDOVER'})
@@ -427,7 +427,7 @@ class CloseGripperOnHandoverToRobot(smach.State):
             return "failed"
 
         if arm.handover_to_robot(self.timeout):
-            
+
             if grabbed_entity_designator:
                 arm.occupied_by = grabbed_entity_designator
             else:

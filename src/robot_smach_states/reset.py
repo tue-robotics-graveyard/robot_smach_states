@@ -4,6 +4,7 @@ import smach
 
 ############################## Atomic Reset States ##############################
 
+
 class ResetHead(smach.State):
     def __init__(self, robot, timeout=0.0):
         self.robot = robot
@@ -14,6 +15,7 @@ class ResetHead(smach.State):
         rospy.logwarn("Better use another function, what do you want to achieve, straight or cancel???")
         self.robot.head.reset(timeout=self.timeout)
         return "done"
+
 
 class CancelHead(smach.State):
     def __init__(self, robot, timeout=0.0):
@@ -26,6 +28,7 @@ class CancelHead(smach.State):
         self.robot.head.cancel_goal()
         return "done"
 
+
 class ResetLeftArm(smach.State):
     def __init__(self, robot, timeout=0.0):
         self.robot = robot
@@ -37,6 +40,7 @@ class ResetLeftArm(smach.State):
         self.robot.leftArm.send_gripper_goal('close', timeout=self.timeout)
         return "done"
 
+
 class ResetRightArm(smach.State):
     def __init__(self, robot, timeout=0.0):
         self.robot = robot
@@ -47,6 +51,7 @@ class ResetRightArm(smach.State):
         self.robot.rightArm.reset()
         self.robot.rightArm.send_gripper_goal('close', timeout=self.timeout)
         return "done"
+
 
 class ResetArms(smach.State):
     def __init__(self, robot, timeout=0.0):
@@ -60,6 +65,7 @@ class ResetArms(smach.State):
         self.robot.rightArm.reset(timeout=self.timeout)
         self.robot.rightArm.send_gripper_goal('close', timeout=self.timeout)
         return "done"
+
 
 class ResetArm(smach.State):
     def __init__(self, robot, side, timeout=0.0):
@@ -80,6 +86,7 @@ class ResetArm(smach.State):
         side.send_gripper_goal('close', timeout=self.timeout)
         return "done"
 
+
 class ResetSpindle(smach.State):
     def __init__(self, robot, timeout=0.0):
         self.robot = robot
@@ -90,6 +97,7 @@ class ResetSpindle(smach.State):
         self.robot.spindle.reset()
         return "done"
 
+
 class ResetTorso(smach.State):
     def __init__(self, robot, timeout=0.0):
         self.robot = robot
@@ -99,6 +107,7 @@ class ResetTorso(smach.State):
     def execute(self, userdata=None):
         self.robot.torso.reset()
         return "done"
+
 
 class SetSpindle(smach.State):
     def __init__(self, robot, timeout=0.0, height=0.35):
@@ -114,6 +123,7 @@ class SetSpindle(smach.State):
         self.robot.spindle.send_goal(self.height)
         return "done"
 
+
 class ResetED(smach.State):
     def __init__(self, robot):
         self.robot = robot
@@ -124,7 +134,9 @@ class ResetED(smach.State):
         self.robot.ed.reset()                                # Reset ed
         self.robot.lights.set_color(r=0.0,g=0.0,b=1.0,a=1.0) # Blue
         return 'done'
+
 ############################## Combination Reset smach.States ##############################
+
 
 class ResetArmsSpindle(smach.State):
     def __init__(self, robot, timeout=0.0):
@@ -141,6 +153,7 @@ class ResetArmsSpindle(smach.State):
         self.robot.spindle.reset()
         return "done"
 
+
 class ResetArmsHead(smach.State):
     def __init__(self, robot, timeout=0.0):
         self.robot = robot
@@ -156,6 +169,7 @@ class ResetArmsHead(smach.State):
         self.robot.head.reset(timeout=self.timeout)
         return "done"
 
+
 class ResetHeadSpindle(smach.State):
     def __init__(self, robot, timeout=0.0):
         self.robot = robot
@@ -167,6 +181,7 @@ class ResetHeadSpindle(smach.State):
         self.robot.spindle.reset()
         self.robot.head.reset(timeout=self.timeout)
         return "done"
+
 
 class ResetArmsSpindleHead(smach.State):
     # Checks how many tasks have been done and if another task is needed
@@ -184,6 +199,7 @@ class ResetArmsSpindleHead(smach.State):
         self.robot.spindle.reset()
 
         return "done"
+
 
 class ResetSpindleHeadUp(smach.State):
     def __init__(self, robot, timeout=0.0):

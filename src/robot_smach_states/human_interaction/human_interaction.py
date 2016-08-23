@@ -20,7 +20,8 @@ import math
 # Hear: Immediate hear
 # Ask: Interaction, say + hear
 
-##########################################################################################################################################
+#######################################################################################################################
+
 
 class Say(smach.State):
     """Say a sentence or pick a random one from a list.
@@ -39,13 +40,10 @@ class Say(smach.State):
     >>> #robot.speech.speak.assert_any_call('a', 'us', 'kyle', 'default', 'excited', True)
     >>> #robot.speech.speak.assert_any_call('b', 'us', 'kyle', 'default', 'excited', True)
     >>> #robot.speech.speak.assert_any_call('c', 'us', 'kyle', 'default', 'excited', True)"""
-    def __init__(self, robot, sentence=None, language=None, personality=None, voice=None, mood=None, block=True, look_at_standing_person=False):
+    def __init__(self, robot, sentence=None, language=None, personality=None, voice=None, mood=None, block=True,
+                 look_at_standing_person=False):
         smach.State.__init__(self, outcomes=["spoken"])
         ds.check_type(sentence, str, list)
-        #ds.check_type(language, str)
-        #ds.check_type(personality, str)
-        #ds.check_type(voice, str)
-        #ds.check_type(mood, str)
         ds.check_type(block, bool)
 
         self.robot = robot
@@ -58,7 +56,8 @@ class Say(smach.State):
         self.look_at_standing_person = look_at_standing_person
 
     def execute(self, userdata=None):
-        #robot.head.look_at_standing_person()
+
+        # robot.head.look_at_standing_person()
 
         if not self.sentence:
             rospy.logerr("sentence = None, not saying anything...")
@@ -73,11 +72,12 @@ class Say(smach.State):
             self.robot.head.look_at_standing_person()
         self.robot.speech.speak(sentence, self.language, self.personality, self.voice, self.mood, self.block)
 
-        #robot.head.cancel_goal()
+        # robot.head.cancel_goal()
 
         return "spoken"
 
-##########################################################################################################################################
+#######################################################################################################################
+
 
 class Hear(smach.State):
     def __init__(self, robot, spec, time_out = rospy.Duration(10), look_at_standing_person=True):
@@ -103,6 +103,9 @@ class Hear(smach.State):
             self.robot.speech.speak("Something is wrong with my ears, please take a look!")
 
         return "not_heard"
+
+#######################################################################################################################
+
 
 class HearOptions(smach.State):
     def __init__(self, robot, options, timeout = rospy.Duration(10), look_at_standing_person=True):
@@ -130,6 +133,9 @@ class HearOptions(smach.State):
             self._robot.speech.speak("Something is wrong with my ears, please take a look!")
 
         return "no_result"
+
+#######################################################################################################################
+
 
 class HearOptionsExtra(smach.State):
     """Listen to what the user said, based on a pre-constructed sentence
@@ -210,7 +216,7 @@ class HearOptionsExtra(smach.State):
         return "no_result"
 
 
-##########################################################################################################################################
+#######################################################################################################################
 
 
 class HearYesNo(smach.State):
@@ -267,7 +273,7 @@ class HearYesNo(smach.State):
         return 'heard_failed'
 
 
-##########################################################################################################################################
+#######################################################################################################################
 
 
 class AskContinue(smach.StateMachine):
@@ -289,22 +295,22 @@ class AskContinue(smach.StateMachine):
                                     transitions={   'continue':'continue',
                                                     'no_result':'no_response'})
 
-##########################################################################################################################################
+#######################################################################################################################
+#
+#
+# class WaitForPersonInFront(WaitForDesignator):
+#     """
+#     Waits for a person to be found in fron of the robot. Attempts to wait a number of times with a sleep interval
+#     """
+#
+#     def __init__(self, robot, attempts = 1, sleep_interval = 1):
+#         # TODO: add center_point in front of the robot and radius of the search on ds.EdEntityDesignator
+#
+#         human_entity = ds.EdEntityDesignator(robot, type="human")
+#         ds.WaitForDesignator.__init__(self, robot, human_entity, attempts, sleep_interval)
 
 
-class WaitForPersonInFront(WaitForDesignator):
-    """
-    Waits for a person to be found in fron of the robot. Attempts to wait a number of times with a sleep interval
-    """
-
-    def __init__(self, robot, attempts = 1, sleep_interval = 1):
-        # TODO: add center_point in front of the robot and radius of the search on ds.EdEntityDesignator
-        # human_entity = ds.EdEntityDesignator(robot, center_point=gm.PointStamped(x=1.0, frame_id="base_link"), radius=1, id="human")
-        human_entity = ds.EdEntityDesignator(robot, type="human")
-        ds.WaitForDesignator.__init__(self, robot, human_entity, attempts, sleep_interval)
-
-
-##########################################################################################################################################
+#######################################################################################################################
 
 
 class LearnPerson(smach.State):
@@ -341,8 +347,7 @@ class LearnPerson(smach.State):
         else:
             return 'succeeded_learning'
 
-
-##########################################################################################################################################
+#######################################################################################################################
 
 
 class LookAtPersonInFront(smach.State):
@@ -357,7 +362,7 @@ class LookAtPersonInFront(smach.State):
         self.lookDown = lookDown
 
     def execute(self, userdata=None):
-	time.sleep(1.0) # infinite loop hack
+        time.sleep(1.0) # infinite loop hack
         self.robot.head.look_at_standing_person()
         self.robot.head.wait_for_motion_done()
 
@@ -382,36 +387,36 @@ class LookAtPersonInFront(smach.State):
             return 'failed'
 
 
-##########################################################################################################################################
-
-
-class WaitForPersonEntity(smach.State):
-    """
-        Wait until a person is seen/scanned in front of the robot.
-            Use paramaterers to costumize number of retries and sleep between retries
-    """
-    def __init__(self, robot, attempts = 1, sleep_interval = 1):
-        smach.State.__init__(self, outcomes=['succeeded', 'failed'])
-        self.robot = robot
-        self.attempts = attempts
-        self.sleep_interval = sleep_interval
-
-    def execute(self, userdata=None):
-        counter = 0
-        detected_humans = None
-
-        while counter < self.attempts:
-            print "WaitForPerson: waiting {0}/{1}".format(counter, self.attempts)
-
-            detected_humans = detect_human_in_front(self.robot)
-            if detected_humans:
-                print "[WaitForPerson] " + "Found a human!"
-                return 'succeeded'
-
-            counter += 1
-            rospy.sleep(self.sleep_interval)
-
-        return 'failed'
+#######################################################################################################################
+#
+#
+# class WaitForPersonEntity(smach.State):
+#     """
+#         Wait until a person is seen/scanned in front of the robot.
+#             Use paramaterers to costumize number of retries and sleep between retries
+#     """
+#     def __init__(self, robot, attempts = 1, sleep_interval = 1):
+#         smach.State.__init__(self, outcomes=['succeeded', 'failed'])
+#         self.robot = robot
+#         self.attempts = attempts
+#         self.sleep_interval = sleep_interval
+#
+#     def execute(self, userdata=None):
+#         counter = 0
+#         detected_humans = None
+#
+#         while counter < self.attempts:
+#             print "WaitForPerson: waiting {0}/{1}".format(counter, self.attempts)
+#
+#             detected_humans = detect_human_in_front(self.robot)
+#             if detected_humans:
+#                 print "[WaitForPerson] " + "Found a human!"
+#                 return 'succeeded'
+#
+#             counter += 1
+#             rospy.sleep(self.sleep_interval)
+#
+#         return 'failed'
 
 
 class WaitForPersonDetection(smach.State):
@@ -442,7 +447,7 @@ class WaitForPersonDetection(smach.State):
 
         return 'failed'
 
-##########################################################################################################################################
+#######################################################################################################################
 
 
 def detect_human_in_front(robot):
@@ -466,7 +471,7 @@ def detect_human_in_front(robot):
         if 0.0 < x < 1.5 and -1.0 < y < 1.0:
             return True
 
-##########################################################################################################################################
+#######################################################################################################################
 
 
 def learn_person_procedure(robot, person_name="", n_samples=5, timeout=5.0):
@@ -511,7 +516,7 @@ def learn_person_procedure(robot, person_name="", n_samples=5, timeout=5.0):
     return count
 
 
-##########################################################################################################################################
+#######################################################################################################################
 
 if __name__ == "__main__":
     import doctest
